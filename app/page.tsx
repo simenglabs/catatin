@@ -365,7 +365,7 @@ function DashboardMock() {
         <span className="size-2.5 rounded-full bg-amber-400" />
         <span className="size-2.5 rounded-full bg-emerald-400" />
         <span className="ml-3 rounded-md bg-background px-3 py-1 text-xs text-muted-foreground">
-          catatin.app/dashboard
+          catatin.menglabs.id/dashboard
         </span>
       </div>
       <div className="p-5 text-left">
