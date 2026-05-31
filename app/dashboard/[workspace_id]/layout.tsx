@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { requireWorkspace } from "@/lib/workspace";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({
   children,

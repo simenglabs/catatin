@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -13,6 +14,29 @@ import {
 
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://catatin.id";
+
+export const metadata: Metadata = {
+  alternates: { canonical: APP_URL },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Catatin",
+  url: APP_URL,
+  description:
+    "Aplikasi pencatatan penjualan, stok, dan invoice untuk usaha Anda. Kelola DP, Belum Lunas, Lunas otomatis.",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "IDR",
+  },
+  inLanguage: "id",
+};
 
 const FEATURES = [
   {
@@ -64,6 +88,10 @@ const TEMPLATES = [
 export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
