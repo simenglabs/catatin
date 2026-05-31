@@ -1,11 +1,11 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useActionState, useEffect, useRef, useState, startTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ImagePlus, Loader2 } from "lucide-react";
 
-import { updateWorkspaceSettings, type SettingsState } from "./actions";
+import { updateWorkspaceSettings } from "./actions";
 import { InvoiceTemplate } from "@/components/invoice/invoice-template";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,7 @@ import {
   type Workspace,
 } from "@/lib/types";
 
-const initialState: SettingsState = { error: null };
+const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
 
 /** Static sale used only to render the live invoice preview. */
 const SAMPLE_SALE: SaleWithRelations = {
@@ -62,17 +62,11 @@ const SAMPLE_SALE: SaleWithRelations = {
   ],
 };
 
-const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
-
 export function SettingsForm({ workspace }: { workspace: Workspace }) {
-  const [state, formAction, isPending] = useActionState(
-    updateWorkspaceSettings.bind(null, workspace.id),
-    initialState
-  );
+  const [isPending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Live-preview state (also drives the submitted values via name attributes).
   const [companyName, setCompanyName] = useState(workspace.company_name);
   const [template, setTemplate] = useState<InvoiceTemplateId>(
     workspace.invoice_template
@@ -90,11 +84,6 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
     workspace.logo_url
   );
 
-  useEffect(() => {
-    if (state.error) toast.error(state.error);
-    if (state.ok) toast.success("Pengaturan invoice disimpan.");
-  }, [state]);
-
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -109,7 +98,7 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    fd.delete("logo"); // the file is uploaded directly, not via the action
+    fd.delete("logo");
 
     const file = fileRef.current?.files?.[0];
     if (file) {
@@ -117,10 +106,7 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
       try {
         const body = new FormData();
         body.set("logo", file);
-        const res = await fetch("/api/upload-logo", {
-          method: "POST",
-          body,
-        });
+        const res = await fetch("/api/upload-logo", { method: "POST", body });
         const json = (await res.json()) as { url?: string; error?: string };
         if (!res.ok || !json.url) {
           toast.error(json.error ?? "Gagal upload logo.");
@@ -135,7 +121,15 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
       }
     }
 
-    startTransition(() => formAction(fd));
+    startTransition(async () => {
+      const result = await updateWorkspaceSettings(
+        workspace.id,
+        { error: null, ok: false },
+        fd
+      );
+      if (result?.error) toast.error(result.error);
+      if (result?.ok) toast.success("Pengaturan invoice disimpan.");
+    });
   }
 
   const previewWorkspace: Workspace = {
@@ -156,7 +150,6 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
@@ -299,9 +292,7 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment_instructions">
-                Instruksi Pembayaran
-              </Label>
+              <Label htmlFor="payment_instructions">Instruksi Pembayaran</Label>
               <Textarea
                 id="payment_instructions"
                 name="payment_instructions"
@@ -330,7 +321,6 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
         </Button>
       </form>
 
-      {/* Live preview */}
       <div className="space-y-2 lg:sticky lg:top-20 lg:self-start">
         <p className="text-sm font-medium text-muted-foreground">
           Pratinjau Invoice

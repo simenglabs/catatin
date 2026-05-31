@@ -1,30 +1,22 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useActionState, useEffect, useRef, useState, startTransition } from "react";
+import { useTransition, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ImagePlus, Loader2 } from "lucide-react";
 
-import { createWorkspace, type OnboardingState } from "./actions";
+import { createWorkspace } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const initialState: OnboardingState = { error: null };
 const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
 
 export function OnboardingForm() {
-  const [state, formAction, isPending] = useActionState(
-    createWorkspace,
-    initialState
-  );
+  const [isPending, startTransition] = useTransition();
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (state.error) toast.error(state.error);
-  }, [state]);
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -63,7 +55,10 @@ export function OnboardingForm() {
       }
     }
 
-    startTransition(() => formAction(fd));
+    startTransition(async () => {
+      const result = await createWorkspace({ error: null }, fd);
+      if (result?.error) toast.error(result.error);
+    });
   }
 
   const busy = uploading || isPending;
