@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, startTransition } from "react";
 import { toast } from "sonner";
 import { ImagePlus, Loader2 } from "lucide-react";
 
@@ -135,7 +135,7 @@ export function SettingsForm({ workspace }: { workspace: Workspace }) {
       }
     }
 
-    formAction(fd);
+    startTransition(() => formAction(fd));
   }
 
   const previewWorkspace: Workspace = {
