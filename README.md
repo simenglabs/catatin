@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Catatin
 
-## Getting Started
+Aplikasi SaaS **Sales & Invoicing multi-tenant** — kelola produk, catat penjualan
+(DP / Belum Lunas / Lunas), lacak pembayaran, dan cetak invoice. Setiap pengguna
+memiliki satu workspace; seluruh data terisolasi per `workspace_id`.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 16** (App Router) + React 19
+- **Tailwind CSS v4** + Radix UI / shadcn
+- **Supabase** — Postgres, Auth, Storage
+- TypeScript
+
+## Arsitektur akses data
+
+Akses data tenant memakai **service-role** (bypass RLS) yang dibungkus helper
+ber-scope, dengan RLS tetap menyala sebagai jaring pengaman lapis kedua.
+
+| Lapisan | Dipakai untuk | Klien |
+|---------|---------------|-------|
+| Identitas & bootstrap | auth, onboarding, chrome layout | anon + sesi + RLS ([lib/supabase/server.ts](lib/supabase/server.ts)) |
+| Data tenant (CRUD, metrik) | produk, sales, pembayaran | service-role ber-scope ([lib/db/scoped.ts](lib/db/scoped.ts)) |
+| Pembuatan sale | RPC `create_sale` (atomic: invoice + stok + status) | sesi user (RPC self-authorize via `auth.uid()`) |
+
+Inti keamanannya ada di [lib/db/scoped.ts](lib/db/scoped.ts): `getScopedDb()`
+memverifikasi kepemilikan workspace lalu mengembalikan klien yang **memaksa**
+filter `workspace_id` di setiap query — pengganti RLS saat memakai service-role.
+Klien service-role ([lib/supabase/admin.ts](lib/supabase/admin.ts)) **server-only**;
+jangan pernah meng-import-nya dari komponen `"use client"`.
+
+## Setup
+
+### 1. Environment
+
+Salin `.env.example` ke `.env.local` dan isi dari Supabase Dashboard → Settings → API:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...        # SERVER ONLY — tanpa prefix NEXT_PUBLIC_
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Database
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Migrasi ada di [supabase/migrations/](supabase/migrations/) dan sudah diterapkan
+ke project. Untuk lingkungan baru, jalankan berurutan (via Supabase CLI atau
+SQL Editor):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| File | Isi |
+|------|-----|
+| `0001_init.sql` | Skema, RPC, trigger, RLS, bucket `logos` |
+| `0002_grant_api_roles.sql` | Grant DML ke role API (anon/authenticated/service_role) |
+| `0003_tighten_function_grants.sql` | Cabut EXECUTE fungsi internal dari anon/authenticated |
+| `0004_revoke_public_execute.sql` | Cabut EXECUTE `PUBLIC` dari fungsi `SECURITY DEFINER` |
+| `0005_fix_logos_bucket_listing.sql` | Hapus policy listing bucket yang terlalu luas |
 
-## Learn More
+### 3. Jalankan
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Akun demo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Buat/segarkan akun demo (idempotent — aman dijalankan ulang):
 
-## Deploy on Vercel
+```bash
+node --env-file=.env.local scripts/seed-demo.mjs
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Kredensial:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+Email    : demo@catatin.app
+Password : demodemo123
+```
+
+Berisi workspace **Toko Demo Catatin** + 5 produk contoh, tanpa data sales/payment.
+
+## Catatan keamanan
+
+- **RLS tetap aktif** di semua tabel sebagai jaring pengaman; jangan dimatikan.
+- **Leaked Password Protection** (cek HaveIBeenPwned) butuh **plan Pro** — tidak
+  tersedia di free tier. Opsional; bukan syarat MVP. Aktifkan nanti bila upgrade
+  di Dashboard → Authentication → Sign In / Providers → Email.
+- Jalankan `get_advisors` (MCP) atau database linter setiap habis perubahan DDL.
+
+## Skrip
+
+| Perintah | Fungsi |
+|----------|--------|
+| `npm run dev` | Server pengembangan |
+| `npm run build` | Build produksi |
+| `npm run start` | Jalankan hasil build |
+| `npm run lint` | ESLint |
+| `node --env-file=.env.local scripts/seed-demo.mjs` | Seed akun demo |
