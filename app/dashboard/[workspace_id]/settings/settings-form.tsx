@@ -28,10 +28,12 @@ const SAMPLE_SALE: SaleWithRelations = {
   id: "preview",
   workspace_id: "preview",
   invoice_number: "INV-CONTOH-0001",
+  customer_id: null,
   customer_name: "Budi Santoso",
   total_amount: 750000,
   status: "Belum Lunas",
   is_delivered: true,
+  due_date: null,
   created_at: new Date().toISOString(),
   sales_items: [
     {

@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/sales/status-badge";
 import { PaymentDialog } from "@/components/sales/payment-dialog";
 import { DeliveredToggle } from "@/components/sales/delivered-toggle";
+import { DueDateEditor } from "@/components/sales/due-date-editor";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -190,6 +191,12 @@ export default async function SaleDetailPage({
                   isDelivered={sale.is_delivered}
                 />
               </div>
+              <DueDateEditor
+                workspaceId={workspace.id}
+                saleId={sale.id}
+                dueDate={sale.due_date}
+                status={sale.status}
+              />
             </CardContent>
           </Card>
         </div>

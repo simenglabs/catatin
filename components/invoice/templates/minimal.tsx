@@ -50,6 +50,14 @@ export function MinimalInvoice({
             Tanggal
           </p>
           <p className="mt-1 font-medium">{formatDate(sale.created_at)}</p>
+          {sale.due_date && (
+            <>
+              <p className="mt-2 text-xs uppercase tracking-wide text-zinc-400">
+                Jatuh Tempo
+              </p>
+              <p className="mt-1 font-medium">{formatDate(sale.due_date)}</p>
+            </>
+          )}
         </div>
         <div className="text-right">
           <p className="text-xs uppercase tracking-wide text-zinc-400">

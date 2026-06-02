@@ -3,11 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Minus, Plus, Trash2 } from "lucide-react";
+import { Loader2, Minus, Plus, Trash2, UserPlus } from "lucide-react";
 
 import { createSale } from "@/app/dashboard/[workspace_id]/sales/actions";
-import type { PaymentMethod, Product } from "@/lib/types";
+import type { Customer, PaymentMethod, Product } from "@/lib/types";
 import { formatRupiah } from "@/lib/format";
+import { CustomerDialog } from "@/components/customers/customer-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,18 +37,23 @@ const PAYMENT_METHODS: PaymentMethod[] = ["Tunai", "Transfer", "QRIS", "Lainnya"
 export function SaleForm({
   workspaceId,
   products,
+  customers: initialCustomers,
 }: {
   workspaceId: string;
   products: Product[];
+  customers: Customer[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [customerName, setCustomerName] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
+  const [customerId, setCustomerId] = useState<string>("");
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
   const [initialPayment, setInitialPayment] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("Tunai");
   const [isDelivered, setIsDelivered] = useState(false);
+  const [dueDate, setDueDate] = useState("");
 
   const available = products.filter(
     (p) => !lines.some((l) => l.product.id === p.id)
@@ -77,9 +83,18 @@ export function SaleForm({
     setLines((prev) => prev.filter((l) => l.product.id !== id));
   }
 
+  const selectedCustomer = customers.find((c) => c.id === customerId);
+
+  function handleCustomerCreated(customer: Customer) {
+    setCustomers((prev) =>
+      prev.some((c) => c.id === customer.id) ? prev : [...prev, customer]
+    );
+    setCustomerId(customer.id);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!customerName.trim()) return toast.error("Nama pelanggan wajib diisi.");
+    if (!selectedCustomer) return toast.error("Pilih pelanggan terlebih dahulu.");
     if (lines.length === 0) return toast.error("Pilih minimal satu produk.");
 
     const payment = Number(initialPayment) || 0;
@@ -88,7 +103,8 @@ export function SaleForm({
 
     startTransition(async () => {
       const result = await createSale(workspaceId, {
-        customerName,
+        customerId: selectedCustomer.id,
+        customerName: selectedCustomer.name,
         items: lines.map((l) => ({
           product_id: l.product.id,
           quantity: l.quantity,
@@ -96,6 +112,7 @@ export function SaleForm({
         initialPayment: payment,
         paymentMethod: method,
         isDelivered,
+        dueDate: dueDate || null,
       });
       if (result.error) {
         toast.error(result.error);
@@ -117,6 +134,7 @@ export function SaleForm({
         : "DP";
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <Card>
@@ -125,14 +143,42 @@ export function SaleForm({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label htmlFor="customer">Nama Pelanggan</Label>
-              <Input
-                id="customer"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Ibu Sari"
-                required
-              />
+              <Label>Pelanggan</Label>
+              <div className="flex gap-2">
+                <Select value={customerId} onValueChange={setCustomerId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih pelanggan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.length === 0 ? (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        Belum ada pelanggan
+                      </div>
+                    ) : (
+                      customers.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                          {c.phone ? ` — ${c.phone}` : ""}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={() => setCustomerDialogOpen(true)}
+                >
+                  <UserPlus className="size-4" />
+                  <span className="hidden sm:inline">Baru</span>
+                </Button>
+              </div>
+              {selectedCustomer?.phone && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedCustomer.phone}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -285,6 +331,21 @@ export function SaleForm({
               <Switch checked={isDelivered} onCheckedChange={setIsDelivered} />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="due-date">
+                Jatuh Tempo{" "}
+                <span className="font-normal text-muted-foreground">
+                  (opsional)
+                </span>
+              </Label>
+              <Input
+                id="due-date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-1 rounded-lg bg-muted/50 p-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sisa Tagihan</span>
@@ -306,5 +367,14 @@ export function SaleForm({
         </Card>
       </div>
     </form>
+
+    <CustomerDialog
+      key={customerDialogOpen ? "open" : "closed"}
+      workspaceId={workspaceId}
+      open={customerDialogOpen}
+      onOpenChange={setCustomerDialogOpen}
+      onSaved={handleCustomerCreated}
+    />
+    </>
   );
 }

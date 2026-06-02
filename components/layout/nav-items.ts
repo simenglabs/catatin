@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Settings, ShoppingCart, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Package, Settings, ShoppingCart, Users, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   label: string;
@@ -10,6 +10,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, segment: "" },
   { label: "Penjualan", icon: ShoppingCart, segment: "sales" },
+  { label: "Pelanggan", icon: Users, segment: "customers" },
   { label: "Produk", icon: Package, segment: "products" },
   { label: "Pengaturan", icon: Settings, segment: "settings" },
 ];

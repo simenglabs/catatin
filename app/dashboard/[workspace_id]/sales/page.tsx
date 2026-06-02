@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Plus, ShoppingCart } from "lucide-react";
 
 import { getScopedDb } from "@/lib/db/scoped";
-import { formatDate, formatRupiah } from "@/lib/format";
+import { formatDate, formatRupiah, isOverdue } from "@/lib/format";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/sales/status-badge";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,7 @@ export default async function SalesPage({
                     <TableHead>Invoice</TableHead>
                     <TableHead>Pelanggan</TableHead>
                     <TableHead>Tanggal</TableHead>
+                    <TableHead>Jatuh Tempo</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Sisa</TableHead>
                     <TableHead className="text-center">Status</TableHead>
@@ -105,6 +106,24 @@ export default async function SalesPage({
                         <TableCell>{s.customer_name}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {formatDate(s.created_at)}
+                        </TableCell>
+                        <TableCell
+                          className={
+                            isOverdue(s.due_date, s.status)
+                              ? "font-medium text-red-600"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {s.due_date ? (
+                            <>
+                              {formatDate(s.due_date)}
+                              {isOverdue(s.due_date, s.status) && (
+                                <span className="ml-1 text-xs">(lewat)</span>
+                              )}
+                            </>
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatRupiah(s.total_amount)}
@@ -155,6 +174,21 @@ export default async function SalesPage({
                       <span className="text-muted-foreground">Sisa</span>
                       <span>{formatRupiah(remaining)}</span>
                     </div>
+                    {s.due_date && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Jatuh Tempo</span>
+                        <span
+                          className={
+                            isOverdue(s.due_date, s.status)
+                              ? "font-medium text-red-600"
+                              : ""
+                          }
+                        >
+                          {formatDate(s.due_date)}
+                          {isOverdue(s.due_date, s.status) && " (lewat)"}
+                        </span>
+                      </div>
+                    )}
                   </Card>
                 </Link>
               );

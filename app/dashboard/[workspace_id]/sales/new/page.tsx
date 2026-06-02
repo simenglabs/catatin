@@ -5,7 +5,7 @@ import { getScopedDb } from "@/lib/db/scoped";
 import { PageHeader } from "@/components/layout/page-header";
 import { SaleForm } from "@/components/sales/sale-form";
 import { Button } from "@/components/ui/button";
-import type { Product } from "@/lib/types";
+import type { Customer, Product } from "@/lib/types";
 
 export default async function NewSalePage({
   params,
@@ -17,6 +17,7 @@ export default async function NewSalePage({
   const workspace = db.workspace;
 
   const { data: products } = await db.select("products", "*").order("name");
+  const { data: customers } = await db.select("customers", "*").order("name");
 
   return (
     <>
@@ -33,6 +34,7 @@ export default async function NewSalePage({
       <SaleForm
         workspaceId={workspace.id}
         products={(products ?? []) as unknown as Product[]}
+        customers={(customers ?? []) as unknown as Customer[]}
       />
     </>
   );

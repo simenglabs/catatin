@@ -10,7 +10,7 @@ import type { Workspace } from "@/lib/types";
  * `payment_history`) are scoped indirectly through their parent `sale` — use
  * `requireSale()` to obtain a workspace-verified sale id first.
  */
-type ScopedTable = "products" | "sales";
+type ScopedTable = "products" | "sales" | "customers";
 
 /**
  * A thin wrapper over the service-role client that bakes the current user's

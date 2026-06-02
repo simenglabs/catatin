@@ -60,6 +60,12 @@ export function ClassicInvoice({
           <span className="text-zinc-500">Tanggal: </span>
           <span className="font-semibold">{formatDate(sale.created_at)}</span>
         </div>
+        {sale.due_date && (
+          <div className="sm:text-right">
+            <span className="text-zinc-500">Jatuh Tempo: </span>
+            <span className="font-semibold">{formatDate(sale.due_date)}</span>
+          </div>
+        )}
       </div>
 
       <div className="mt-6">

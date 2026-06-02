@@ -36,6 +36,16 @@ export interface Workspace {
   payment_instructions: string | null;
 }
 
+export interface Customer {
+  id: string;
+  workspace_id: string;
+  name: string;
+  phone: string | null;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   workspace_id: string;
@@ -50,10 +60,12 @@ export interface Sale {
   id: string;
   workspace_id: string;
   invoice_number: string;
+  customer_id: string | null;
   customer_name: string;
   total_amount: number;
   status: SaleStatus;
   is_delivered: boolean;
+  due_date: string | null;
   created_at: string;
 }
 
@@ -83,4 +95,11 @@ export interface SaleWithRelations extends Sale {
 export interface CreateSaleItemInput {
   product_id: string;
   quantity: number;
+}
+
+/** Customer form fields. */
+export interface CustomerInput {
+  name: string;
+  phone: string;
+  description: string;
 }

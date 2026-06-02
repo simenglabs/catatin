@@ -65,6 +65,16 @@ export function ModernInvoice({
             <p className="mt-1 text-base font-semibold">
               {formatDate(sale.created_at)}
             </p>
+            {sale.due_date && (
+              <>
+                <p className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                  Jatuh Tempo
+                </p>
+                <p className="mt-1 text-base font-semibold">
+                  {formatDate(sale.due_date)}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
