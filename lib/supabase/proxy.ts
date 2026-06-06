@@ -5,6 +5,14 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
 
 export async function updateSession(request: NextRequest) {
+  // Mobile API routes authenticate via a Supabase Bearer token (see
+  // lib/mobile-auth.ts), not session cookies. Skip the cookie-based session
+  // redirects here so these requests reach their route handlers instead of
+  // being bounced to /login.
+  if (request.nextUrl.pathname.startsWith("/api/mobile")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
