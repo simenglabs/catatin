@@ -331,6 +331,9 @@ export default function LandingPage() {
               <Link href="/signup" className="hover:text-foreground">
                 Daftar
               </Link>
+              <Link href="/privacy" className="hover:text-foreground">
+                Privasi
+              </Link>
             </div>
             <p className="text-muted-foreground">
               Dibuat dengan <span className="text-rose-500">♡</span> oleh{" "}
