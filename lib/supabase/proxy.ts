@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Public routes that do not require an authenticated session. */
-const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/privacy"];
 
 export async function updateSession(request: NextRequest) {
   // Mobile API routes authenticate via a Supabase Bearer token (see
